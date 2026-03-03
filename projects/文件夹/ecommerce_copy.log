@@ -1,0 +1,2 @@
+2026-03-03 22:35:35,734 - INFO - HTTP Request: POST https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-03 22:35:35,740 - INFO - 成功生成文案 | SKU: 夏季连衣裙 | 平台: 小红书 | 市场: CN

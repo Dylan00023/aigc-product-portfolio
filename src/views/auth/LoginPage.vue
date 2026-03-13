@@ -82,6 +82,32 @@ const handleLogin = async () => {
 }
 
 /**
+ * 开发模式登录 - 绕过后端验证
+ */
+const handleDevLogin = () => {
+  // 设置模拟Token
+  const mockToken = 'dev_mock_access_token_' + Date.now()
+  const mockRefreshToken = 'dev_mock_refresh_token_' + Date.now()
+  const mockDeviceId = 'dev_device_001'
+  
+  localStorage.setItem('access_token', mockToken)
+  localStorage.setItem('refresh_token', mockRefreshToken)
+  localStorage.setItem('device_id', mockDeviceId)
+  
+  // 更新store状态
+  authStore.accessToken = mockToken
+  authStore.refreshToken = mockRefreshToken
+  authStore.deviceId = mockDeviceId
+  
+  // 提示用户
+  appStore.notifySuccess('开发模式', '已绕过登录验证')
+  
+  // 跳转到首页
+  const redirect = route.query.redirect as string
+  router.push(redirect || '/')
+}
+
+/**
  * 跳转到注册页
  */
 const goToRegister = () => {
@@ -200,18 +226,62 @@ const goToRegister = () => {
             <button
               type="button"
               @click="goToRegister"
-              class="text-primary-400 hover:text-primary-300 font-medium ml-1 transition-colors"
+              class="text-primary-400 hover:text-primary-300 ml-1 font-medium"
             >
               立即注册
             </button>
           </div>
         </form>
+        
+        <!-- 开发模式分隔线 -->
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-dark-700"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-4 bg-dark-800/50 text-dark-500 rounded">开发调试</span>
+          </div>
+        </div>
+        
+        <!-- 开发模式按钮 -->
+        <button
+          type="button"
+          @click="handleDevLogin"
+          class="w-full py-3 px-4 rounded-lg bg-gradient-to-r from-amber-600/20 to-orange-600/20 
+                 border border-amber-500/30 text-amber-400 font-medium
+                 hover:from-amber-600/30 hover:to-orange-600/30 hover:border-amber-500/50
+                 transition-all duration-200 flex items-center justify-center gap-2"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          开发模式进入（跳过登录）
+        </button>
+        <p class="text-center text-xs text-dark-500 mt-2">
+          后端服务未启动时可使用此方式预览
+        </p>
       </div>
       
-      <!-- 底部信息 -->
-      <div class="text-center mt-8 text-sm text-dark-500">
-        <p>© 2024 IP定位平台. All rights reserved.</p>
+      <!-- 底部版权 -->
+      <div class="text-center mt-8 text-dark-500 text-sm">
+        <p>© 2024 IP定位与直播运营平台</p>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 慢速脉冲动画 */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+</style>

@@ -13,7 +13,7 @@ const router = useRouter()
       <h2 class="text-2xl font-semibold text-white mb-4">页面未找到</h2>
       <p class="text-dark-400 mb-8">抱歉，您访问的页面不存在</p>
       <button
-        @click="router.push('/')"
+        @click="router.push('/app')"
         class="btn-primary"
       >
         返回首页

@@ -9,16 +9,42 @@ import { pointsApi } from '@/api'
 
 export const useAppStore = defineStore('app', () => {
   // ==================== 状态 ====================
-  
+
   /** 侧边栏是否折叠 */
   const sidebarCollapsed = ref(false)
-  
+
+  /** 是否为暗色模式（true=暗色，false=日间） */
+  const isDark = ref<boolean>(
+    localStorage.getItem('theme') !== 'light'
+  )
+
+  // 初始化时同步 class 到 <html>
+  const _applyTheme = (dark: boolean) => {
+    if (dark) {
+      document.documentElement.classList.add('dark')
+      document.documentElement.classList.remove('light')
+    } else {
+      document.documentElement.classList.remove('dark')
+      document.documentElement.classList.add('light')
+    }
+  }
+  _applyTheme(isDark.value)
+
+  /**
+   * 切换日间/夜间模式
+   */
+  const toggleTheme = () => {
+    isDark.value = !isDark.value
+    localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+    _applyTheme(isDark.value)
+  }
+
   /** 积分余额 */
   const points = ref(0)
-  
+
   /** 全局加载状态 */
   const globalLoading = ref(false)
-  
+
   /** 通知消息列表 */
   const notifications = ref<Array<{
     id: string
@@ -27,30 +53,29 @@ export const useAppStore = defineStore('app', () => {
     message?: string
     duration?: number
   }>>([])
-  
+
   // ==================== 方法 ====================
-  
+
   /**
    * 切换侧边栏折叠状态
    */
   const toggleSidebar = () => {
     sidebarCollapsed.value = !sidebarCollapsed.value
   }
-  
+
   /**
    * 设置侧边栏状态
    */
   const setSidebarCollapsed = (collapsed: boolean) => {
     sidebarCollapsed.value = collapsed
   }
-  
+
   /**
    * 获取积分余额
    */
   const fetchPoints = async () => {
     try {
       const response = await pointsApi.getPoints()
-      
       if (response.code === 200 && response.data) {
         points.value = response.data.points
       }
@@ -58,22 +83,16 @@ export const useAppStore = defineStore('app', () => {
       console.error('Fetch points error:', err)
     }
   }
-  
+
   /**
    * 卡密充值
    */
   const useKami = async (cardNumber: string) => {
     try {
       const response = await pointsApi.useKami({ card_number: cardNumber })
-      
       if (response.code === 200) {
-        // 刷新积分
         await fetchPoints()
-        
-        return {
-          success: true,
-          message: response.msg,
-        }
+        return { success: true, message: response.msg }
       } else {
         throw new Error(response.msg)
       }
@@ -84,7 +103,7 @@ export const useAppStore = defineStore('app', () => {
       }
     }
   }
-  
+
   /**
    * 显示通知
    */
@@ -95,73 +114,45 @@ export const useAppStore = defineStore('app', () => {
     duration = 3000
   ) => {
     const id = Date.now().toString()
-    
-    notifications.value.push({
-      id,
-      type,
-      title,
-      message,
-      duration,
-    })
-    
-    // 自动移除
+    notifications.value.push({ id, type, title, message, duration })
     if (duration > 0) {
-      setTimeout(() => {
-        removeNotification(id)
-      }, duration)
+      setTimeout(() => removeNotification(id), duration)
     }
-    
     return id
   }
-  
+
   /**
    * 移除通知
    */
   const removeNotification = (id: string) => {
     const index = notifications.value.findIndex(n => n.id === id)
-    if (index > -1) {
-      notifications.value.splice(index, 1)
-    }
+    if (index > -1) notifications.value.splice(index, 1)
   }
-  
-  /**
-   * 快捷方法 - 成功通知
-   */
-  const notifySuccess = (title: string, message?: string) => {
-    return showNotification('success', title, message)
-  }
-  
-  /**
-   * 快捷方法 - 错误通知
-   */
-  const notifyError = (title: string, message?: string) => {
-    return showNotification('error', title, message, 5000)
-  }
-  
-  /**
-   * 快捷方法 - 警告通知
-   */
-  const notifyWarning = (title: string, message?: string) => {
-    return showNotification('warning', title, message, 4000)
-  }
-  
-  /**
-   * 快捷方法 - 信息通知
-   */
-  const notifyInfo = (title: string, message?: string) => {
-    return showNotification('info', title, message)
-  }
-  
+
+  const notifySuccess = (title: string, message?: string) =>
+    showNotification('success', title, message)
+
+  const notifyError = (title: string, message?: string) =>
+    showNotification('error', title, message, 5000)
+
+  const notifyWarning = (title: string, message?: string) =>
+    showNotification('warning', title, message, 4000)
+
+  const notifyInfo = (title: string, message?: string) =>
+    showNotification('info', title, message)
+
   return {
     // 状态
     sidebarCollapsed,
     points,
     globalLoading,
     notifications,
-    
+    isDark,
+
     // 方法
     toggleSidebar,
     setSidebarCollapsed,
+    toggleTheme,
     fetchPoints,
     useKami,
     showNotification,

@@ -262,6 +262,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     refreshAccessToken,
+    saveTokens,
     fetchDevices,
     kickDevice,
     clearTokens,

@@ -71,7 +71,7 @@ const validateForm = () => {
 }
 
 /**
- * 处理注册
+ * 处理注册：成功后自动登录并回到首页
  */
 const handleRegister = async () => {
   if (!validateForm()) return
@@ -82,8 +82,21 @@ const handleRegister = async () => {
   })
   
   if (result.success) {
-    appStore.notifySuccess('注册成功', '请使用新账号登录')
-    router.push('/login')
+    // 注册成功后自动登录
+    const loginResult = await authStore.login({
+      phone: formData.value.phone,
+      password: formData.value.password,
+    })
+
+    if (loginResult.success) {
+      appStore.notifySuccess('注册并登录成功', '欢迎加入，已为你跳转到首页')
+      await router.push('/app')
+      appStore.fetchPoints()
+    } else {
+      // 登录失败则退回到登录页
+      appStore.notifySuccess('注册成功', '请使用新账号登录')
+      router.push('/login')
+    }
   } else {
     appStore.notifyError('注册失败', result.message)
   }
@@ -269,7 +282,7 @@ const goToLogin = () => {
       
       <!-- 底部信息 -->
       <div class="text-center mt-8 text-sm text-dark-500">
-        <p>© 2024 IP定位平台. All rights reserved.</p>
+        <p>© 2026 丝路智播 IP定位与直播运营平台. All rights reserved.</p>
       </div>
     </div>
   </div>

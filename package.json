@@ -12,6 +12,7 @@
     "axios": "^1.13.6",
     "date-fns": "^4.1.0",
     "pinia": "^3.0.4",
+    "three": "^0.183.2",
     "vue": "^3.5.30",
     "vue-router": "^5.0.3"
   },
@@ -26,6 +27,7 @@
     "tailwindcss": "^4.2.1",
     "typescript": "~5.9.3",
     "vite": "^8.0.0",
+    "vite-plugin-vue-devtools": "^8.1.0",
     "vue-tsc": "^3.2.5"
   }
 }

@@ -71,6 +71,11 @@ const removeFile = () => {
   }
 }
 
+const resetForm = () => {
+  formData.value = { type: '', name: '', jianjie: '' }
+  removeFile()
+}
+
 /**
  * 处理上传
  */
@@ -135,7 +140,7 @@ const formatFileSize = (bytes: number) => {
   <div class="space-y-6">
     <!-- 页面标题 -->
     <div>
-      <h1 class="text-2xl font-bold text-white">IP调查问卷上传</h1>
+      <h1 class="text-2xl font-bold text-white">IP问卷上传</h1>
       <p class="text-dark-400 mt-1">上传IP定位调查问卷文档（支持 .doc, .docx 格式）</p>
     </div>
     
@@ -275,7 +280,7 @@ const formatFileSize = (bytes: number) => {
           
           <button
             type="button"
-            @click="formData = { type: '', name: '', jianjie: '' }; removeFile()"
+            @click="resetForm"
             class="btn-secondary"
           >
             重置

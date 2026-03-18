@@ -1,0 +1,99 @@
+
+      </div>
+      <button @click="handleUpload" :disabled="uploading||!uploadFile" class="btn-primary flex items-center gap-2">
+        <svg v-if="uploading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+        <span>{{ uploading ? '上传中...' : '上传提示词' }}</span>
+      </button>
+    </div>
+
+    <!-- 提示词列表 -->
+    <div v-if="activeTab==='list'" class="card-premium overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4" :style="{borderBottom:'1px solid var(--border-base)'}">
+        <span class="font-medium" :style="{color:'var(--text-primary)'}">共 {{ promptTotal }} 条</span>
+        <button @click="fetchPromptList" :disabled="promptLoading" class="btn-secondary text-sm">刷新</button>
+      </div>
+      <div v-if="promptLoading" class="flex justify-center py-16"><svg class="animate-spin w-8 h-8 text-primary-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></div>
+      <div v-else-if="promptList.length===0" class="flex flex-col items-center py-16" :style="{color:'var(--text-muted)'}">暂无数据</div>
+      <table v-else class="w-full">
+        <thead><tr :style="{borderBottom:'1px solid var(--border-base)'}">
+          <th class="text-left px-6 py-3 text-sm font-medium" :style="{color:'var(--text-muted)'}">ID</th>
+          <th class="text-left px-6 py-3 text-sm font-medium" :style="{color:'var(--text-muted)'}">名称</th>
+          <th class="text-left px-6 py-3 text-sm font-medium" :style="{color:'var(--text-muted)'}">类别</th>
+          <th class="text-left px-6 py-3 text-sm font-medium" :style="{color:'var(--text-muted)'}">上传时间</th>
+          <th class="text-left px-6 py-3 text-sm font-medium" :style="{color:'var(--text-muted)'}">操作</th>
+        </tr></thead>
+        <tbody>
+          <tr v-for="r in promptList" :key="r.id" :style="{borderBottom:'1px solid var(--border-base)'}">
+            <td class="px-6 py-3 text-sm" :style="{color:'var(--text-muted)'}">\#{{ r.id }}</td>
+            <td class="px-6 py-3 text-sm font-medium" :style="{color:'var(--text-primary)'}">{{ r.name || '未命名' }}</td>
+            <td class="px-6 py-3"><span v-if="r.type" class="badge badge-primary">{{ r.type }}</span><span v-else :style="{color:'var(--text-muted)'}">-</span></td>
+            <td class="px-6 py-3 text-sm" :style="{color:'var(--text-muted)'}">{{ formatTime(r.create_time) }}</td>
+            <td class="px-6 py-3"><button @click="mergeForm.prompt_id=String(r.id);activeTab='merge'" class="text-sm text-primary-500 hover:text-primary-400">用此拼接</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 拼接生成 -->
+    <div v-if="activeTab==='merge'" class="card-premium p-8 space-y-6">
+      <p class="text-sm" :style="{color:'var(--text-muted)'}">选择账号简介提示词和IP提示词拼接结果，生成账号简介文案</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium mb-2" :style="{color:'var(--text-secondary)'}">简介提示词 <span class="text-red-500">*</span></label>
+          <select v-model="mergeForm.prompt_id" class="input">
+            <option value="">请选择提示词</option>
+            <option v-for="p in promptList" :key="p.id" :value="String(p.id)">#{{ p.id }} {{ p.name || '未命名' }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-2" :style="{color:'var(--text-secondary)'}">IP提示词拼接结果 <span class="text-red-500">*</span></label>
+          <select v-model="mergeForm.IPmix_id" class="input">
+            <option value="">请选择IP拼接结果</option>
+            <option v-for="m in ipMixList" :key="m.id" :value="String(m.id)">#{{ m.id }} ({{ formatTime(m.create_time) }})</option>
+          </select>
+        </div>
+      </div>
+      <button @click="handleMerge" :disabled="merging" class="btn-primary flex items-center gap-2">
+        <svg v-if="merging" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+        <span>{{ merging ? '提交中...' : '开始生成' }}</span>
+      </button>
+    </div>
+
+    <!-- 拼接结果 -->
+    <div v-if="activeTab==='results'" class="card-premium overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4" :style="{borderBottom:'1px solid var(--border-base)'}">
+        <select v-model="statusFilter" @change="resultsPage=1;fetchResults()" class="input w-36 text-sm">
+          <option value="">全部状态</option>
+          <option value="0">待处理</option><option value="1">处理中</option><option value="2">处理成功</option><option value="3">处理失败</option><option value="4">已取消</option>
+        </select>
+        <button @click="fetchResults" :disabled="resultsLoading" class="btn-secondary text-sm">刷新</button>
+      </div>
+      <div v-if="resultsLoading" class="flex justify-center py-16"><svg class="animate-spin w-8 h-8 text-primary-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></div>
+      <div v-else-if="results.length===0" class="flex flex-col items-center py-16" :style="{color:'var(--text-muted)'}">暂无结果</div>
+      <table v-else class="w-full">
+        <thead><tr :style="{borderBottom:'1px solid var(--border-base)'}">
+          <th class="text-left px-6 py-3 text-sm font-medium" :style="{color:'var(--text-muted)'}">ID</th>
+          <th class="text-left px-6 py-3 text-sm font-medium" :style="{color:'var(--text-muted)'}">状态</th>
+          <th class="text-left px-6 py-3 text-sm font-medium" :style="{color:'var(--text-muted)'}">消耗积分</th>
+          <th class="text-left px-6 py-3 text-sm font-medium" :style="{color:'var(--text-muted)'}">创建时间</th>
+          <th class="text-left px-6 py-3 text-sm font-medium" :style="{color:'var(--text-muted)'}">操作</th>
+        </tr></thead>
+        <tbody>
+          <tr v-for="r in results" :key="r.id" :style="{borderBottom:'1px solid var(--border-base)'}">
+            <td class="px-6 py-3 text-sm" :style="{color:'var(--text-muted)'}">\#{{ r.id }}</td>
+            <td class="px-6 py-3"><span :class="['badge', statusClass(r.status)]">{{ statusLabel(r.status) }}</span></td>
+            <td class="px-6 py-3 text-sm" :style="{color:'var(--text-primary)'}">{{ r.consume_points }}</td>
+            <td class="px-6 py-3 text-sm" :style="{color:'var(--text-muted)'}">{{ formatTime(r.create_time) }}</td>
+            <td class="px-6 py-3">
+              <template v-if="r.status===2 && r.task_record">
+                <button v-if="!signedUrlMap[r.id]" @click="getSignedUrl(r)" :disabled="loadingSignedIds.has(r.id)" class="text-sm text-primary-500 hover:text-primary-400">{{ loadingSignedIds.has(r.id) ? '获取中...' : '获取下载链接' }}</button>
+                <a v-else :href="signedUrlMap[r.id]" target="_blank" download class="text-sm text-accent-500 hover:text-accent-400">下载结果</a>
+              </template>
+              <span v-else :style="{color:'var(--text-muted)'}">-</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>

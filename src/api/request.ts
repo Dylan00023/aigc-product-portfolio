@@ -7,7 +7,7 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse 
 import { useAuthStore } from '@/stores/auth'
 
 // API基础URL - 从环境变量或默认值
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.98:8020'
 
 /**
  * 创建Axios实例
@@ -57,6 +57,11 @@ http.interceptors.response.use(
       try {
         const authStore = useAuthStore()
         
+        // 开发模式 mock token，不尝试刷新，直接跳过
+        if (authStore.accessToken?.startsWith('dev_mock_')) {
+          return Promise.reject(error)
+        }
+
         // 刷新token
         await authStore.refreshAccessToken()
         
